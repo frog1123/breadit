@@ -8,12 +8,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type EditorJS from "@editorjs/editorjs";
 import { uploadFiles } from "@/lib/uploadthing";
 import { toast } from "@/components/ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { usePathname, useRouter } from "next/navigation";
 
 interface EditorProps {
   subredditId: string;
 }
 
 export const Editor: FC<EditorProps> = ({ subredditId }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -119,6 +125,36 @@ export const Editor: FC<EditorProps> = ({ subredditId }) => {
     }
   }, [isMounted, initializeEditor]);
 
+  const { mutate: createPost } = useMutation({
+    mutationFn: async ({ title, content, subredditId }: PostCreationRequest) => {
+      const payload: PostCreationRequest = {
+        subredditId,
+        title,
+        content
+      };
+
+      const { data } = await axios.post("/api/subreddit/post/create", payload);
+      return data;
+    },
+    onError: () => {
+      return toast({
+        title: "Something went wrong",
+        description: "Could not submit post, try again later",
+        variant: "destructive"
+      });
+    },
+    onSuccess: () => {
+      const newPathname = pathname.split("/").slice(0, -1).join("/");
+
+      router.push(newPathname);
+      router.refresh();
+
+      return toast({
+        description: "Your post has been published"
+      });
+    }
+  });
+
   async function onSubmit(data: PostCreationRequest) {
     const blocks = await ref.current?.save();
 
@@ -127,6 +163,8 @@ export const Editor: FC<EditorProps> = ({ subredditId }) => {
       content: blocks,
       subredditId
     };
+
+    createPost(payload);
   }
 
   if (!isMounted) return null;
@@ -135,7 +173,7 @@ export const Editor: FC<EditorProps> = ({ subredditId }) => {
 
   return (
     <div className="w-full p-4 bg-zinc-50 rounded-lg border border-zinc-200">
-      <form id="subreddit-post-form" className="w-fit" onSubmit={handleSubmit(e => {})}>
+      <form id="subreddit-post-form" className="w-fit" onSubmit={handleSubmit(onSubmit)}>
         <div className="prose prose-stone dark:prose-invert">
           <TextareaAutosize
             // @ts-ignore
