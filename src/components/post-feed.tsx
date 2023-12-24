@@ -58,10 +58,12 @@ export const PostFeed: FC<PostFeedProps> = ({ initialPosts, subredditName }) => 
         if (index === posts.length - 1) {
           return (
             <li key={`post-${post.id}`} ref={ref}>
-              <Post />
+              {/* @ts-ignore */}
+              <Post subredditName={post.subreddit.name} post={post} commentsAmount={post.comments.length} />
             </li>
           );
-        } else return <Post />;
+          // @ts-ignore
+        } else return <Post subredditName={post.subreddit.name} post={post} commentsAmount={post.comments.length} />;
       })}
     </ul>
   );
