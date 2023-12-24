@@ -133,7 +133,7 @@ export const Editor: FC<EditorProps> = ({ subredditId }) => {
         content
       };
 
-      const { data } = await axios.post("/api/subreddit/post/create", payload);
+      const { data } = await axios.post("/api/subreddit/posts/create", payload);
       return data;
     },
     onError: () => {
